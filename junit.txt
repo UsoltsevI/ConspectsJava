@@ -1,0 +1,25 @@
+// junit 5
+calss AppTest {
+    @Test
+    void testFoo() {
+        // Assertions.*
+        assertEcuals(10, 5 << 1);
+        assertEcuals(2, 5 >> 1);
+        ...
+    }
+}
+TestResults
+
+public class Sum {
+    int sum(int a, int b) {
+        return a + b;
+    }
+}
+// Generate test
+class SumTest {
+
+    @Test
+    void sum() {
+        assertEquals(4, new Sum().sum(2, 2));
+    }
+}

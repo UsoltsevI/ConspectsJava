@@ -1,0 +1,175 @@
+// Enumerations
+// Exceptions
+// Lombok
+
+// Enumeration Classes
+public enum Size {
+    SMALL, 
+    MEDIUM, 
+    LARGE,
+    EXTRA_LARGE
+};
+Size s = Size.MEDIUM;
+for (Size s: Size.values()) ...
+switch (s) {
+    ...
+}
+
+public enum Size {
+    SMALL("S"), MEDIUM("M"), LARGE("L"), ...;
+    private final String abbreviation;
+    private Size (String abbreviation) {
+        ...
+    }
+    ...
+    oubluc String getAbbreviation() {
+        return abbreviation;
+    }
+} 
+
+// Exceptions
+// Catecories
+* Program mistakes
+* Incorrect input data
+* Net and machine...
+
+Exception (extends) Throwable
+Throwable {
+    getMessage(): sString
+    getCause(): Throw able
+    getStackTrace(): StackTraceElement[]
+}
+Error -> Java mashine
+Excpetion -> Java code
+RuntimaException (extends) Exception
+// What we have to do?
+* Error (и наследники) - не обрабатываем 
+* RuntimeException (и наследники) - быть не должно, устраняем
+* Cheched exceptions - обрабатываем
+// Checked-exceptions:
+public FileInputStream(String name) throws FileNotFoundException {
+    ...
+}
+class MyAnimation {
+...
+    public Image LoadImage(String s)
+        throws FILENotFoundException, EOFException {
+        ...
+    }
+}
+// Checked-нисключения всегда декларируем
+// Runtime - нет
+throw new EOFException(); - бросаем исключение
+//Не следует явно выбрасывать:
+* Exception
+* RuntimeExpetion
+* Throwable
+* Error
+// checked ичколючения - головная боль, но спорно
+// Как поймать исколючение:
+try{
+    code
+    mkre code
+} catch (ExceptionType e) {
+    handler for this type
+    // use e object to extrace the data!
+} catch (UnknownHostException e {
+    // emergency action for unknown hosts
+} catch (IOEException e) {
+    ...
+} // Те, от кого наследуются - внизу
+//try-multicatch:
+try {
+    //code that might throw exceptions
+} catch (FileNotFoundException | UnknownHostExceptions e) {
+        // emegrenccy action ...
+}
+
+// Перевыбрасывание исключений
+try {
+    access the database
+} catch (Exception e) {
+    logger.log(level, message, e);
+    //Хотя exception и более широкий тип, чем задекларированный в методе, но компилятор поймёт
+    throw e;
+}
+//
+try {
+    access the database
+} catch (SQLException e) {
+    ServletException se = new ServeletException("database error");
+    // сохраняем информацию о первопричине
+    se.initCause(e); // обязательно!!!
+    throw se;
+}
+// Не возбраняется использовать следующие стандартные исключения:
+* InvalidArgumentException  // неспраильный, ненудевой параметр метода
+* InvalidStateException     // Внутреннее состояние объекта не подходит для запуска метода
+* NullPointerException      // Передан null в метод, не ожидающий null
+* IndexOutOfBoundsException // Индесный параметр выходит за допустимый диапазон
+
+// Если не понятно, что делать с исключением:
+* Задекларируйте checked excpetion в методе
+* Оберните в unchecked exception (InvalidStateException, например) // спасение во всех случаях
+* Lobmok's @SneakyThrows // так себе
+
+Общее спрвило:
+* Throw early, catch late
+* Не откладывайте выбрасывание исключения, как только стала ясная причина ошибки
+* Не спешите обработать исключение, пока вам не стал полностью ясен механизм обработки
+
+// finally-block
+ImputStream in = new FileInputStream(...);
+try {
+    // исключение может возникнуть здесь
+    code that might throw exceptions
+    // и даже возврат из метода вызове блок finally!
+    if (...)
+        return;
+} catch (IOException e) {
+    // Бывает, исколючение срабатывает во время обработки исключений
+    show error message
+} finally { // не сипользовать без нужды, а нужны никогда нет
+    // сработает в любом случае!
+    in.close();
+}
+
+try-with-resources-block
+// Общая схема
+try (Resourse res = ...) {
+    work with res
+}
+// Example:
+try (Scanner in = new Scanner (
+        new FileInputStream("/usr/share/dict/words")), "UTF-8);
+        PrintWriter out = new PrintWriter("out.txt")) { // должно иметь метод close, который выполнится обязательно
+    while (in.hasNext())
+        out.println(in.next().toUpperCase());
+}
+
+// Closeable && AutoCloseable interfaces должны быть
+// Исколючения - для исключительный слуаев!
+// ЧУДОВИЩНО! НЕ ДЕЛАТЬ ТАК:
+try {
+    int i = 0;
+    while (true)
+        rabge[i++].climb();
+} catch (ArrayIndexOutOfBoundsException e) {
+}
+// ДЕЛАЁТЕ ТАК!
+for (Mountain m: tange)
+    m.climb();
+
+// не сикользовать исключения для контроля выполнения. Это
+* Маскирует настоящие ошибки
+* Затратно по ресурсам
+* Медленно, компилятор не оптимизирует под исключения
+
+Если исключение вылезло в продакшоне:
+Analyze -> Analyze Stack Trace...
+Исслежуем стэк вызовов
+
+// Используем самые новые версии кода!!!
+ThreadLocalRandom - для генерации случайных чисел 
+
+

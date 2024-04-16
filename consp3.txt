@@ -1,0 +1,309 @@
+OOP
+
+Every thing there is a class
+
+Evety type is an Objects's heir
+
+Class inputs to pakages
+
+There is no pakages ierarchic  
+
+calss ClassName {
+    field1
+    field2
+    ...
+    constructor1
+    constructor2
+    ...
+    method1
+    method2
+    ...
+}
+
+{
+import org.megacompany.staff,Employee;
+
+Employee hacker = new Employee("Harry Hacker", 5000, 10, 1);
+...
+}
+
+Filed 'this' just like in C++
+
+Primitive tipes - through values
+Objects - through links
+
+Object's features: {
+    Creation: new Employee(...)
+    Employee hacker = ...
+    Link's lossing
+    Take the rubbish out
+}
+
+Types of visibility: {
+    private - vidible only to class
+    package-private - only to package (by default)
+    protected - to class, package and heir-classes
+    public - to all
+}
+
+Rule: public class Foo in file Foo.java
+only one public class in each file
+
+
+
+Inheritance: {
+    public class Manager extends Employee {
+        private double bonus;
+        
+        public void setBonus(double bonus) {
+            this.bonus = bonus;
+        }
+    }
+
+    UML - graphics diagram classes
+    
+    Only one parent
+
+    Overriding: {
+        class Employee {
+            private int salary;
+            public int getSalary() {
+                return salary;
+            }
+            
+            public int getTotalPayout() {
+                return getSalary();
+            }
+        }
+        
+        class Manager extends Employee {
+            private int bonus;
+            @Override //не обязательная, но крайне желательная штука
+            public int getTotalPayout() {
+                return getSalary() + bonus;
+                // return super.getTotalPlayout() + bonus; // also possible
+            }
+        }
+        
+    }
+
+    final
+    overriding
+    
+    polymorfizm
+    overloading
+
+    there is no operator's overloading
+
+    static doesn't work during multithrearing execution 
+    static must be forbidden!!!
+
+    but:
+    public static final double PI = 3.14159265358979323846;
+
+    static to static only!!!
+
+
+
+}
+
+short form for for: {
+    Employee[] staff = new ...;
+
+    for (Employee e : staff)
+        (...)
+}
+
+Arrays knows about themselves and cometimes it can leads to runtime eroor
+
+class Emplouee {
+    private static int nextId;
+    private int id;
+
+    //static initialization block
+    //вызывается всего один раз при создании первого элемента этого класса
+    static {
+        nextId = ThreadLocalRandom.current().nextInt(10000);
+    }
+    
+    //добавлется при каждом вызове до конструктора
+    //objext initialization block
+    {
+        id = nextId;
+        nextId++;
+    }
+}
+
+
+//Abstract classes:
+public abstract class Person {
+    public Person(String name) {
+    this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+    
+    publuic abstract String getDescription(); //without implementation
+}
+//
+punlic class Student extends Person {
+    private String major;
+
+    public Student(String name, String major) {
+        super(name);
+        this.major = major;
+    }
+
+    @Override
+    public String getDescription() {
+        return "a student majoring in " + major;
+    }
+}
+
+//Interfaces
+//его нельзя инстанцировать!
+public interface Prism {
+    double PI = 3.14;
+    //это --- final-переменная!
+
+    double getArea();
+    double getHeight();
+    //это --- публичные абстрактные методы!
+
+    //это метод может вызывать другие и чатать final-поля
+    default double getVolume() {
+        return getArea() * getHeight();
+    }
+}
+//
+public class Parallelepiped implements Prism {
+    private double a;
+    private double b;
+    private double h;
+
+    @Override
+    public double getArea() {
+        return a * b;
+    }
+
+    @Override
+    public double getHeight() {
+        return h;
+    }
+}
+//Отличия интерфейсов от абстрактных классов
+//Они не имеют внутреннего состояния и конструкторов
+//Можно наследоваться только от одного класса, но реализовывать сколько угодно интерфейсов - множественное наследование
+//как абстракция интерфейс предпочтительнее
+
+x instanceof y - проверить, являются ли эти переменные одного типа
+
+
+//Вложенные классы
+class Outer {
+    int field = 42;
+    class Inner {
+        //поля внутренних класов могут перекрывать поля внешних
+        int filed = 18;
+        public void show() {
+            //есть доступ к состоянию внешнего класса
+            System.out.println(field);
+            //печатает 18
+            System.out.println(Outer.this.field);
+            //печатает 42
+        }
+    }
+
+    void initInner() {
+        //инициализация вложенного класса внутри
+        new Inner();
+    }
+}
+//
+Outer.Inner in = new Outer().new Inner();
+    
+
+//Локальные вложенные классы могут быть прямо внутри методов
+class Outer {
+    void outerMethod() {
+        //final (или effictively final) тут существенно
+        final int x = 98;
+        System.out.println("inside outerMethod");
+        
+        class Inner {
+            void innerMethod() { 
+                System.out.println("x = " + x);
+            }
+        }
+        
+        Inner y = new Inner();
+        y.innerMethod();
+    }
+}
+
+//вложенные статические классы
+class Outer {
+    private static void outerMethod() {
+        System.out.println("inside outerMethod");
+    }
+    
+    static class Inner {
+        public static void main(String[] args) {
+            System.out.println("inside inner class Method");
+            outerMethod();
+        }
+    }
+}
+
+Outer.Inner x = new Outer.Inner();
+//В отличе от не статического: new Outer().new Inner();
+
+
+//Анонимные классы
+class Demo {
+    void show() {
+        System.out.println("superclass");
+    }
+}
+class Flavor1Demo {
+    public static void main(String[] args) {
+        Demo d = new Demo() {
+            @Override
+            void show() {
+                super.show();
+                System.out.println("subclass");
+            }
+        };
+        
+        d.show();
+    }
+}
+
+//Objects: {
+    * all classes are Objects
+    * You haven't to write 'class Employee extends Object'
+    * It has:
+        * equals & hashCode
+        * toString
+}
+//hashCode() - чтобы хэш таблица работала
+
+Lombok {
+    import lombok.EqualsAndHashCode;
+
+    @EqualsAndHashCode
+    public class Person {
+        private int age;
+        private String name;
+    }
+
+    import lombok.ToString;
+
+    @ToString
+    public class Person {
+        private int age;
+        private String name;
+    }
+}

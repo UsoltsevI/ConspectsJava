@@ -1,0 +1,144 @@
+Hello, world!
+New Maven Project
+New package
+New calss
+psvm - sout
+Манифест (runnable jar)
+
+
+/**
+ * This is the first sample program in Core Java Chapter 3
+ * @varsion 1.01 1997-03-22
+ * @author Gary Cornell
+ */
+public calss FirstSample {
+	public static void main(String[] args) {
+	/*multiline
+	comment*/
+	System
+		.out //single-line commnet
+		.println("We wiil not use 'Hello, World!'");
+	}
+}
+
+Types:
+* Primitive
+	* byte, short, int, long
+	* char
+	* float, double
+	* boolean
+* Arrays
+* Objects
+
+Literals:
+* Long L
+* Underscores
+* Hexademical 0xCAFEBABE
+* Binary 0b0101
+* Octal 010
+
+There is no unsigned
+
+double features: {
+    0x1.0p-3 = 0.125
+
+    2.0-1.1
+
+    Don't calc money as double!!!
+
+    2.0 / 0.0 = infinity
+    
+    0.0 / 0.0 = NaN
+
+    
+}
+
+strictfp 
+
+double x = 9.997F;
+int nx = (int) x; //9
+nx = (int) Math.round(x); //10
+
+Use String!
+char - 16 bit as usual
+Use String!
+
+char i = '\u03C0'; //pi
+
+void СуммаНДФЛ() {
+    // it works!
+}
+
+boolean features: {
+    true and false;
+    there is no auto conversation
+}
+
+int i, j; - bad tone
+
+defenition security)
+
+int vocationDays = 12;
+
+final - as const 
+final - to forbid redefinition of method/class
+
+field of view: {
+    Places of defenition: class, method, block
+    There is no Global variables!!!
+}
+
+Type inference (Java 10):
+var i = 1;
+//just a sugar
+
+Interesting operators: {
+    >>> - the first bit = 0;
+    5 >> 32 == 5;...
+
+    a || b && c such like a || (b && c)
+
+    a += b += c such like a += (b += c)
+
+    There is no ','
+}
+
+unreachable code doesn't compile
+
+iffalse?
+
+Arrays: {
+    String[] a = new String[1];
+    or 
+    Object[] b = a;
+
+    b[0] = 5;
+
+    other example: {
+        Нет двумерных, есть только массивы массивов
+        int[][] adds = new int[NMAX + 1][];
+
+        for (int n = 0; n <= NMAX; n++)
+            odds[n] = new int[n + 1];
+
+        for (int n = 0; n < odds.lenght; n++)
+            for (int k = 0; k < odds[n].lenght; k++) {
+                //compute lotteryOdds
+                ...
+                adds[n][k] = lotteryOdds;
+            }
+    }
+}
+
+label: {
+    red_data: while (...) {
+        ...
+        for (...) {
+            ...
+            if (...)
+                break read_data;
+        }
+    }
+
+    continue with lable is possible too;
+}
