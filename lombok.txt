@@ -1,0 +1,14 @@
+import lombok.AllArgsConstructor;
+
+@AllArgsConstructor
+@EqualsAndHashCode
+public class Person {
+    private final int age;
+    private final String name;
+}
+//
+class TEST {
+    public static void main(String[] args) {
+        new Person(39, "Ivan")
+    }
+}

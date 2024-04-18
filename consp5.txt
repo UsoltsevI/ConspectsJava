@@ -1,0 +1,115 @@
+Class String
+String e = ""; // an empty string
+String java = "Java\u2122"; // Java^TM
+
+Строка - иммутабельный объект
+String greeting = "Hello!"
+greeting = greeting.substring(0, 3) + "p!"; // Help!
+Хотя внутри строки - массивб изменить его отдельные элементы нельзя!
+
+Пул строковых констант - String Constant Pool. Оптимизация памяти
+String name1 = "John Doe";
+String name2 = "John Doe";
+/* DO NOT DO THIS!! */
+String name3 = new String("John Doe");
+
+// String comparizon
+* if (a == "John Doe") - incorrect!
+* if (a.equals("John Doe")) - bad, NPE, if a == null
+* if ("John Doe".equals(a)) - correct!
+"John Doe" - an Onject, not primitive
+* if ("John Doe.equalsIsIgnoreCase(a)) - без учёта регистра
+* if (str != null && !str.trim().isEmpty()) - в этой строке что-то есть!
+
+// Конкатенация строк
+String foo = "foo";
+String bar = "bar";
+System.out.println(foo + bar); // foolbar
+// Структура такова:
+* Пользовательской перегрузки опереторов не предусмотрено
+* Оператор + для строк перегружен на уровне строк
+* Оператор == не перегружен, хоть его неперегруженная версия для строк и не имеет смысла:-(
+
+Конкатенация строк: проблема производительности
+// плохая производительность, не делать так!
+String result = "";
+for (int i = 0; i < numItems(); i++)
+    result += lineForItem(i);
+return result;
+// Использовать StringBuilder! Всегда!
+// заранее можно аллоцировать приблизительное кол-во символоы
+StringBuilder b = new StringBuilder(numItems() * LINE_WIDTH);
+// а можно и по умолчанию: new StringBuilder() (16 chars)
+for (int i = 0; i < numItems(); i++)
+    b.append(lineForItem(i));
+return b.toString();
+
+Длина в UTF-16 code units:
+String greeting = "Hello";
+int n = greeting.length(); // is 5
+// Real String length:
+int cpCount = greeting.codePointCount(0, greeting.length());
+
+символ на i-й позиции
+// O(1)
+char first = greeting.charAt(0); // first is 'H'
+если нужны code points:
+int[] codePoints = str.codePoints().toArray();
+
+Useful methods:
+* int length()
+* char charAd(int index)
+* int compareTo(string other)
+* boolean equals(Object other)
+* boolean equalsIgnoreCase(Object other)
+* boolean startsWith(String perfix)
+* boolean endsWith(String prefix)
+* String toLowerCase() / toUpperCase()
+* String trim()
+* String join(CharSequence delimiter, CharSequence... elements)
+Harmful methods:
+* indexOf.. / lastIndexOf..
+* replace..
+* split..
+
+Чем пользоваться вместо них?
+Регулярные выражения!
+String input = "11:59 am";
+Pattern pattern = Pattern.compile("([1-9]|1[0-2]\\s*:\\s*([0-5][0-9])\\s*([ap]m)")
+Matcher matcher = pattern.matcher(input);
+// matches() - требует совпадения всей строки
+// find() - находит первое совпадение
+if (matcher.matches()){
+    String hours = matcher.group(1); // 11
+    String minutes = matcher.group(2); // 59
+    String period = matcher.group(3); // am
+}
+
+поиск/замена в цикле
+Кринж метод {
+    // хотим получить на выходе "1xxxx23":
+    Map<String, String> replacements = new HashMap<String, String>();
+    //
+    replacements.put("${env1}", "1");
+    replacements.put("${env2}", "2");
+    replacements.put("${env3}", "3");
+    //
+    String line = "${env1}xxx${env2}${env3}";
+
+} Норм метод {
+    // начиная с java 9, можно использовать StringBuilder
+    StringBuilder sb = new StringBuffer();
+
+    Pattern p = Pattern.compile("(\\$\\{[^}]+\\})");
+    Matcher m = p.matcher(line);
+    while (m.find()) {
+        String repString = replacements.get(m.group(1));
+        if (repString != null)
+            m.appendReplacement(sb, repString);
+    }
+    m.appendTail(sb);
+
+    System.out.println(sb.toString()); // 1xxxx23
+
+}
+
