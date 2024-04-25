@@ -92,3 +92,107 @@ public class Container<T> {
     public static T getValue(); // не скомпилируется
 }
 // сатический контекст один на всех!!!
+
+// Нельзя реализовывать разные параметризации одного и того же интерфейса!
+
+Ковариантность массивов VS инвариантность дженериков
+
+Wildcard Types {
+    class List<E> {
+        // для List<Employee> "пролезет" List<Manager>!!
+        void addAllFrom (List<? extends E> list) {
+            for (E item: list)
+                add(item);
+        }
+    }
+
+    // что можно делать с объектом, типизированным ? extends?
+
+    List<? extends E> list = ...
+    // это понятно
+    E e1 = list.get(...);
+
+    E e2 = ...;
+    // не скомпилируется! ПОЧЕМУ??
+    list.add(e2);
+    // скомпилируется. ПОЧЕМУ?
+    list.add(null);
+
+    В общем, addAllTo реализовать не получится...
+
+
+    В обратную сторону (контрвариантные типы)
+    class List<E> {
+        // для List<Employee> "пролезет" List<Person>!!
+        void addAllTo (List<? super E> list) {
+            for (E item: this)
+                list.add(item);
+        }
+    }
+
+    // что можно делать с объектом, типизированным ? super?
+    List<? super E> list = ...
+    E e1 = ...;
+    // скомпилируется!
+    list.add(e1);
+    list.add(null);
+    
+    // Только Object. ПОЧЕМУ??
+    Object e2 = list.get(...);
+
+
+    Unbounded wildcard
+    * List<?> - это то же, что List<? extends Object>
+    * Брать элементы можем, но тип только Object
+    * Класть можем только null
+
+
+    Правила использование wildcard-типов:
+    * Используются в аргументах методов и локальных переменных
+    * Невидимы пользователю API, не должны возвращаться
+    * Их цель - принимать те аргументы, которые надо принимать, и отвергать те аргументы, которые надо отвергать
+    * Должнгы быть используемы в APIm иначе API будет слишком "жёстким" и непригодным для использования
+
+
+    Wildcard Capture
+    public static void swap(Pair<?> p) {
+        Object f = p.getFirst();
+        Object s = p.getSecond();
+        // УУУППС!!
+        // (мы знаем, что они правильного типа,
+        //  но ничего не можем поделать)
+        p.setFirst(...);
+        p.setSecond(...);
+    }
+    Метод с type capture {
+        public static void swap(Pair<?> p) {
+            return swapHelper(p);
+        }
+        
+        private static <T> void swapHelper(Pair<T> p) {
+            T f = p.getFirst();
+            p.getFirst(p.getSecond());
+            p.setSecond(f);
+        {
+    }
+}
+
+Recursive Generics {
+    class Holder<E, SELF extends Holder<E, SELF>> {
+        E value;
+        SELF setValue(E value) {
+            this.value = value;
+            return (SELF) this;
+        {
+    }
+    
+    class StringHolder extends Holder<String, StringHolder> {
+        void doSmth() {...};
+    }
+
+    StringHolder h = new StringHolder().setValue("aaa").doSmth();
+}
+
+Effective Java! J.Bloch
+
+
