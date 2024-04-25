@@ -1,0 +1,94 @@
+Core Java
+Generics
+
+Определяем свой собственный параметризованный класс:
+puclic class Pair<T> {
+    private T first;
+    private T second;
+
+    public Pair() { 
+        first = null; 
+        second = null; 
+    }
+    
+    public Pair(T first, T second) {
+        this.first  = first;
+        this.second = second;
+    }
+    
+    public T getFirst() {
+        return first;
+    }
+    
+    public T getSecond() {
+        return second;
+    }
+    
+    public void setFirst(T newValue) {
+        first = newValue;
+    }
+    
+    public void setSecond(T newValue) {
+        second = newValue;
+    }
+}
+
+Generic methods {
+    public <T> T getRandomItem(T... items) {
+        return items[ThreadLocalRandom.current().nextInt(items.length)];
+    }
+    
+    String s = getRandomItem("A", "B", "C");
+    Manager m = getRadomItem(ceo, cto, cfo);
+}
+
+Bounded types:
+public <T extends Person> String getRandomPersonName(List<T> items) {
+    Person result = // можно написать и T result =
+        items.get(ThreadLocalRandom.current().nextInt(items.size()));
+
+    return result.getName();
+}
+// можно через амперсанд сколько угодно интерфейсов, но не более одного класса
+// public <T extends Person & Payable> ...
+
+Не упротреблять сырые типы!!!
+
+class Pair<T> {
+    T newValue {
+        return new T(); // compilation error!!!
+    }
+}
+// решение при помощи метакласса и рефлекции (о которой речь впереди)
+class Container<T> {
+    // bounded wildcard type, речь впереди
+    Class<? extends T> clazz;
+
+    Container(Class<? extends T> clazz) {
+        this.clazz = clazz;
+    }
+
+    T newInstance() throws ReflectiveOperationException {
+        // если нашёлся открытый конструктор без параметров!
+        return clazz.newInstance();
+    }
+}
+Container<Employee> container1 = new Container<>(Employee.class);
+
+Массивы и дженерики - лютые враги
+Varargs - всё равно массив...
+@SafeVarargs - честно, не буду устраивать heap pollution!:
+* не записывать ничего в элементы массива
+* не рздавать ссылку на массив параметров наружу
+
+Нельзя параметризовать:
+* Исключения
+* Анонимные классы
+* Enum-ы
+
+Нельзя использовать в статическо контексте
+public class Container<T> {
+    private static T value; // не скомпилируется
+    public static T getValue(); // не скомпилируется
+}
+// сатический контекст один на всех!!!
