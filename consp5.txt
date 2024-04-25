@@ -110,6 +110,359 @@ if (matcher.matches()){
     m.appendTail(sb);
 
     System.out.println(sb.toString()); // 1xxxx23
-
 }
 
+Регулярные выражения
+Достоинства:
+* Проверяют формат строки
+* Гибкие к необязательным/незначащим разделителям, "мусору" и т. п.
+* Группы - мощнейший инструмент выделения данных из строки
+Недостатки:
+* Нужно учиться пользоваться
+* Нужно учиться грамотно пользоваться (можно просадить производительность)
+* Выглядит уродливо и непонятно
+
+Конечные автоматы {
+    Регулярные выражения - сложно
+    
+    Пример реализации:
+    enum State {START, QUOTED_BODY, QUOTE_READ, UNQUOTED_BODY}
+    List<String> parse(String line) {
+        String state = State.START;
+        List<String> result = new ArrayList<>();
+        StringBuilder fieldValue = new StringBuilder();
+        for (char c : line.toCharArray()) {
+            switch (state) {
+                case START:
+                    fieldValue = new StringBuilder();
+                    if (c == '"') {
+                        state = State.QUOTED_BODY;
+                    } else {
+                        fieldValue.append(c);
+                        state = State.UNQUOTED_BODY;
+                    }
+                    break;
+                case QUOTED_BODY:
+                    if (c == '"') {
+                        state = State.QUOTED_READ;
+                    } else {
+                        fieldValue.append(c);
+                        state = State.Quoted_BODY;
+                    }
+                    break;
+                case QUORE_READ:
+                    if (c == '"') {
+                        filedValue.append(c);
+                        state = State.QUOTED_BODY;
+                    } else if (c == ',') {
+                        result.add(fieldValue.toString());
+                        state = State.START;
+                    } else { // invalid input format
+                        ...
+                    }
+                    break;
+                case UNQOUTED_BODY:
+                    if (c == ',') {
+                        result.add(sieldValue.toString());
+                        state = State.START;
+                    } else {
+                        fieldValue.append(c);
+                    }
+                    break;
+            }
+        }
+        result.add(filedValue.toString());
+        return result;
+    }
+}
+
+При обработке строк регулярки и ДКА - наше всё!
+
+
+Wrapper Types
+Примитивные типы несовместимы с объектами. Поэтмоу есть Wrapper Classes:
+byte,short,int,long -> Byte,Short,Integer,Long
+char                -> Character
+float,double        -> Float,Double
+boolean             -> Boolean
+
+Кэширование(object pool)
+Integer five1 = Integer.valueOf(5);
+Integer five2 = Integer.valueOf(5);
+/*DO NOT DO THIS!!*/
+Integer five3 = new Integer(5);
+// Comparison by equals
+* Эти объекты иммутабельные!
+* Проверка равенства - только по equals!
+
+Число из строки и в строку:
+Статические методы:
+* Integer.parseInt(value, radix);
+* Integer.toString(value, radix);
+* Double.parseDouble(value);
+* Double.toStirng(value);
+
+Autoboxing & unboxing {
+    ArrayList<Integer> list = new ArrayList<>();
+    
+    // autiboxing :-)
+    list.add(3); // runtime work by default (common)
+    // without autoboxing :-(
+    list.add(Integer.valueOf(3));
+    
+    // unboxing :-)
+    int n = list.get(i);
+    // with no automatic unboxing :-(
+    int n = list.get(i).intValue();
+
+    // Не всегда всё так очевидно с автобоксингом
+    {
+        Integer n = 3;
+        // unbox - incremetn - box.
+        // not so effective!!
+        n++;
+    
+        Integer a = 1000;
+        Integer b = 1000;
+        if (a == b) ... // NO! THIS WILL FAIL!
+    }
+}
+
+Class BigInteger {
+    BigInteger i = new BigInteger("12345523933874983749837498374934343434");
+    BigInteger j = new BigInteger("74897983748937498798798234879879879849");
+
+    BigInteger sum = i.add(j);
+    BigInteger difference = i.substract(j);
+    BigInteger quotient = i.devide(j);
+    BifInteger product = i.multiply(j);
+}
+
+Class BigDecimal { // == BigInteger + some decimal numbers
+    public static BigDecimal calculateTotalAmount(
+            BigDecimal quantity,        BigDecimal unitPrice,
+            BigDecimal discountRate,    BigDecimal taxRate) {
+        BigDecimal amount = quantity.multiply(unitPrice);
+        BigDecimal discount = amount.multiply(discountRate);
+        ...
+        // round to 2 decimal places using HALF_EVEN
+        BigDecimal roundTotal = total.setScae(2, RoundMode.HALF_EVEN);
+        return roundTotal;
+    }
+}
+
+
+
+Базовые потоки ввода/вывода
+Closeable (close() throws IOException
+InputStream and OutputStream
+
+Комбинирование потоков!
+Пример {
+    Path.path = Paths.get("path/to/file.dat");
+    
+    try (DataInputStream dis = 
+            new DataInputStream(
+                new BufferInputStream(
+                    Files.newInoutStream(path)))) {
+        double doubleVal = dis.readDouble();
+        long longVal = dis.readLong();
+    }
+}
+Привет чтения zip-файла {
+    Path path = Paths.get("path/to/file.zip");
+    
+    try(ZipInputStream zis = new ZipInputStream(
+        Files.newInputStream(path));
+        DataInputStream dis = new DataInputStream(zis)) {
+        . . .
+    }
+}
+
+Чтение/запись текстовых данных
+Простой и правильный метод {
+    Path path = Paths.get("path/to/file.txt");
+    
+    // Ленивая вычитка
+    Stream<String> lines = Files.lines(path. StandartCharsets.UTF_8);
+    
+    // Вычитка всего содержимого в память
+    List<String> strings = Files.readAllLines(path, StandardCharsets.UTF_8);
+    // для маленьких файлов... антипаттерн
+}
+Более старый метод {
+    try (BufferReader br =
+            Files.newBufferReader(path, StandardCharsets.UTF_8)) {
+        String line;
+        while ((line = br.readLine()) != null) {
+            . . .
+        }
+    }
+}
+
+Сохранения готовых данных в текст {
+    Path path = Paths.get("path/to/file.txt");
+    List<String> lines = new List<String>();
+    lines.add(...)
+
+    // Если всё уже готово в памяти
+    Files.write(path, lines, StandardCharsets.UTF_8);
+}
+
+Сохранение данных в текст по мере поступления {
+    try (PrintWriter printEriter = new PrintWriter(
+            Files.new BufferWriter(
+                path, StandardCharsets.UTF_8))) {
+        printWriter.println(...);
+        printWriter.printf(...);
+    }
+}
+
+Работа с файловой системой
+* Устаревший File
+* Более современный Path (Java 7+)
+{
+    // Path не обязательно указывает на уже существующий файл или каталог!!
+
+    Path absolute = Paths.get("/home", "harry");
+    Path relative = Paths.get("myprog", "conf", "user.properties");
+    
+    Path subPath = absolute.resolve("file.txt");
+    
+    subPath.getParent(); // родитель
+    subPath.getFileName(); // последняя компонента пути
+
+    // все компоненты, кроме последней, должны существовать
+    Files.createDirectory(path);
+    // создаёт все директории в path
+    Files.createDirectories(path);
+    // создаёт пустой файл
+    Files.createFile(path);
+
+    // создаёт временный файл в локацииб специфичной для ОС
+    Files.createTempFile(prefix, suffix);
+
+
+    // имеет смысл проверять перед тем, как открывать поток на чтение
+    Files.exists(path)
+    Files.isReadable(path)
+
+    Files.size(path)
+}
+
+Чтение списков и обход директории в глубину {
+    Stream<Path> list = Files.list(path);
+
+    Stream<Path> walk(Path start, int maxDepth, FileVisitOption... option)
+}
+
+Кпирование, перемещение и удаление файлов {
+    Files.copy(fromPath, toPath)
+
+    Files.move(fromPath, toPath)
+
+    Files.delete(path)
+}
+
+ЧАСТЬ ВТОРАЯ
+Время 
+
+Системные часы {
+    * long System.currentTime/millis() - количество миллисекунд, прошеднее с наступления полуночи 1 января 1970 года на Гринвической меридиане минус число високосных секунд, с точки зрения системных часов.
+        * Гранулярность может быть больше миллисекунды
+        * "Замирают" при вставке високосной секунды
+        * Значения могу "скакать" в обес стороны при синхронизации через NTP!
+    // плохая для замера интервалов 
+    // для генерации штампов времени (с пониманием ограничений)
+
+    * long System.nanoTime() - монотонные часы
+        * наносекунднач точность
+        * нет прявязки к "календарному" времени.
+    // для замеров периодов времени
+
+    Но для замеров производтельности программ на Java надо использовать JMH.
+}
+
+DataTime API {
+    Современные (Java 8+):
+    * LocalDate, LocalTime, Instant, Duration, Period
+    * ZoneID, ZodeDateTime
+    * С ним работает DateTimeFormater
+
+    Instant {
+        * Точка на временной прямой
+        * UNIX time
+        
+        // текущий момент
+        Instant.now();
+        // явно заданный Instant
+        Instant.ofEpochSecond(3);
+        // Какой сегодня год?
+        int year = Instant.now().get(ChronoField.YEAR);
+    }
+    
+    LocalDate, LocalTime & LocalDateTime {
+        * Дата и время в "человеческом" понимании
+        * Без информации о том, в каком часовом поясе -> без привязки к Instant
+        * часто такая привязка не нужна: "еженедельный митинг в 9.00" в привязке к UTC
+            "уползёт" при переходе не летнее время
+        
+        LocalData date = LocalDate(of2014, 3, 18); // 18 марта 2024г
+        
+        int year        = date.getYear(); // 2014
+        Month month     = date.getMonth(); // MARCH
+        int day         = date.getDayOfMonth(); // 18
+        DayOfWeek dow   = date.getDayOfWeek(); // TUESDAY
+        
+        LocalTime time = LocalTime.of(13, 45, 20); // 13:45:20
+
+        int hour    = time.getHour();
+        int minute  = time.getMinute();
+        int second  = time.getSecond();
+        
+        LocalDateTime dt1 = LocalDateTime.of(2014, Month.MARCH, 16, 13, 45, 20);
+        LocalDateTime dt1 = LocalDateTime.of(date, time);
+        LocalDateTime dt2 = date.atTime(time);
+        LocalDateTime dt3 = date.atDate(date);
+
+        dt1.toLocalDate(); // 2014-03-18
+        dt1.toLocalTime(); // 13:45:20
+    }
+
+    Duration & Period {
+        Duration - время между жвумя точками на временной прямой с наносекундной точностью
+        Period   - разница во времени между LocalDate в днях
+        Оба различают интерфейс TemporalAmount
+
+        // В качестве аргуменов годятся LocalTime, LocalDateTime & Instant
+        Duration d = Duration.between(time1, time2);
+    
+        // В качестве аргумента годится только LocalDate
+        Period tenDays = Period.between(LocalDate.of(2014, 3, 8), LocalDate.of(2014, 3, 18));
+    }
+
+    конструирование новых объектов из старых {
+        Instant i = Instant.now();
+        Duration d = Duration.ofSeconds(3);
+
+        // For example:
+        i.plus(dd.multipliedBy(10)).minus(dd.minus(Duration.ofMillis(1)));
+        
+        // то же самое можно сделать с LocalDateTime
+    }
+    
+    В строку и из строки {
+        LocalDate date = LocalDate.of(2014, 3, 18);
+        String s = date.format(DateTimeFormater.ISO_LOCAL_DATE); // 2014-03-18
+        LocalDate date2 = LocalDate.parse(s, DateTimeFormater.ISO_LOCAL_DATE);
+    }
+
+    Часовые пояса {
+        ZoneId moscowZone = ZoneId.of("Europe/Moscow");
+        LocalDateTime dataTime = LocalDateTime.now();
+        ZonedDateTime moscowTime = dateTime.atZone(moscowZone);
+        sout(moscowTime);
+        // 2019-09-30T18:15:52.670+03:00[Europe/Moscow]
+        
+    }
+}
