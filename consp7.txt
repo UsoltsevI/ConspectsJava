@@ -1,0 +1,330 @@
+Коллекции: разделение интерфейсов и реализиций
+
+Iterable <- Collections <- List
+                ^   ^ Set <- SortedSet <- NavigableSet
+                ^ Queue <- Deque
+
+Iterable {
+    Умеет участвовать в for loop:
+    Iterable<T> collection = ...
+    for (T e: collection) {
+        ...
+    }
+
+    Iterator {
+        * boolean hasNext();
+        * E next();
+        * default void remove(); // не всегда поддердивается, может лопнуть в runtime
+    }
+
+    Iterable<T> collection = ...
+    Iterator<T> i = collection.iterator();
+    while (i.hasNext()) {
+        T e = i.next();
+        if (e ... ) {
+            i.remove();
+        }
+    }
+
+    Специально для List: ListIterator<E> listIterator();
+}
+
+Comparable и Comparator {
+    public interface Comparable<T> {
+    /**
+     * @param  o the object to be compared.
+     * @return a negative integer, zero, or a positive integer as this
+     *          if less than, equal to, or greater than the specified object
+     */
+     int compareTo(T o);
+    }
+
+    /*применяются в случае, если сравниваемые объекты
+    не реализуют Comparable*/
+    public interface Comparator<T> {
+        int compare(T o1, To2);
+    }
+}
+
+Промежуточные итоги {
+    * Испольщуйте интерфейсы для типов переменных и аргументов в методах. Не привязывайтей к конкретным реализациям.
+    * Помимо возможности подмены реализаций, существуют суррогатные коллекции. например, важные частные случаи:
+        // Пустые                   // Из одного элемента
+        Collections.emptyList();    Collections.singletonList(o);
+        Collections.emptySet();     Collections.singleton(o);
+        Collections.emptyMap()      Collections.singletonMap(k, v);
+        ...
+}
+
+Суррогатные коллекцит: защита (частичная) при публикации объекта 
+    Collections.unmodifiableList(List<? extends T> 1);
+    Collections.unmodifiableSet(Set<?extends T> s);
+    ...
+}
+Collections имеет много всего полезного!
+
+ArrayList {
+    Свойства:
+    * get(int index) is O(1) <- main benefit of ArrayList<R>
+    * add(E element) is O(1) amortized, but O(n) worst-case since the array must be resized and copied
+    * add(int index, E element) if O(n) (with n/2 steps on average)
+    * remove(int index) is O(n) (with n/2 steps on average)
+    * Iterator.remove() is O(n) (with n/2 steps on average)
+    * ListIterator.add(E element) is O(n) (with n/2 steps an average)
+}
+
+LinkedList {
+    Свойства:
+    * Implements List and Deque
+    * get(int index) is O(n) (with n/4 steps on average)
+    * add(E element) is O(1)
+    * add(int index, E element) is O(n) (wuth n/4 steps on average), but O(1) when index = 0 <- main benefit of LinkedList<E>
+    * remove(int index) is O(n)
+    * Iterator.remove() is O(1) <- main benefit
+    * ListIterator.add(E element) if O(1) <- the one of the main benefits
+}
+
+ArrayList на практике применяется значительно чаще
+
+А если всё-таки нужен Deque {
+    * ArrayDeque
+    * Circular array
+    * Более быстрый, чем LinkedList
+}
+
+PriorityQueue {
+    * Постановка в очередь с сортировкой по приоритету за счёт Comparable или Comparator
+    * Balances binary heap: "the two children of queue[n] are queue[2 * n + 1] and 'queue[2 * (n + 1)]'"
+    
+     PriorityAueue<String> q = new PriortyQueue<>();
+     q.add("foor"); q.add("bar"); q.add("baz");
+}
+
+Опасайтесь LinkedList!
+
+Его Величество HashMap {
+    Map<String, Integer> map = new HashMap<>();
+    map.put("foo", 1); map.put("bar", 2); map.put("baz", 3);
+
+    Реализуйте Comparable!! - Тогда список будет превращатьс в дерево и всё будет работат хорошо)
+}
+
+LinkedHashMap {
+    * помнит порядок вставки элементов
+    * Хорош для хранения нсатроек "ключ-значение", задаваемых текстом
+}
+
+Другие варивции HashMap {
+    * IdentityHashMap - ключ сравнивается по ==б а не по equals()
+    * WeakHashMap - значения могут быть собраны сборщиком мусора, если не используются где-то ещё
+}
+
+TreeMap {
+    * Красно-чёрное дерево, ключи сравниваются по Comparable или Comparator
+    * Как обычный Map уступает HashMap-у
+    * Незачем в ситуациях, когда ключ известен только приблизительно
+}
+
+Множества (Sets) {
+    * Коллекци, в которых объект может присутствовать только один раз
+    * Реализованы на базе соответствующих Maps:
+        * HashSet - не очень здорово
+        * LinkedHashSet
+        * TreeSet
+     
+    Множества наоснове битовых масок:
+    * EnumSet - на базе единственного значения типа long. Только для enum-ов!
+    * BitSet  - массив long-ов
+}
+
+Collections.sort(...) - сортировать
+Collections.shuffle(...) - перемешать
+Collections.binarySearch(...) - бинарный поиск (для отсортированных)
+Также уже реализованы:
+    * поиск min/max
+    * копирование
+    * Разворачивание "задом наперёл"
+    * объединение и разность
+    * ... - ищите и найдёте!
+
+
+ЛЯМБДЫ!!!
+
+Callbacks: до появления лямбд {
+    public interface ActionListener {
+        void actionPerformed(ActionEvent event);
+    }
+
+    // ----использлование----
+    String text = ...
+    new Timer(1000, new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            ... // 'text' var is availible here
+            }
+        });
+
+    // ----Comparator----
+    String[] friends = {"Peter", "Paul", "Mary"};
+    Arrays.sort(friends,
+        new Comparator<String>() {
+            @Override
+            public int compare(String o1, String o2) {
+                return o1.length() - o2.length();
+            }
+        });
+
+}
+
+Welcome lambda expressions! {
+    // single-line
+    (String first, String second) ->
+        first.lenght() - second.length()
+
+    // multi-line with int return
+    (String first, String second) -> {
+        if (first length() < second.length()) return -1;
+        else if (first.length() > second.length()) return 1;
+        else return 0;
+    }
+
+    // no-arg, void return
+    () -> System.out.println("Hello");
+}
+
+Чему можно присваивать лямбды? {
+    * Функциональный интерфйс - такой, у которого один абстрактоный метод (понятно, что запускать)
+    * Может быть почемен аннотацией @FunctionalInterface, хотя это не обязательно.
+    * Если метод интерфейчас подходит по параметрам и возвращаемому значению лямбды - welcome
+     // Типы аргуменов лямбд указывать не надо: type inference!
+     ActionListener = e -> {...}
+     Comparator<String> c = (s1, s2) -> s1.length() - s2.length();
+}
+
+Void-compatibility {
+    Оба вариантв скомпилируются:
+    // Predicate.test возвращает boolean
+    Predicate<String> p = s -> list(add);
+
+    //Consumer.accept возвращает void!
+    Consumer<String> c = s -> list(add);
+}
+
+Object - не функциональный интерфейс!
+В лямбда можно использовать только effectively final переменные!
+
+Method references: ещё короче, ещё эффективнее {
+    event -> System.out.println(event)      | System.out::println
+    (s1,s2)-> s1.compareToIgnoreCase(s2)    | String::compareToIgnoreCase
+    (x, y) -> Math.pow(x, y)                | Math::pow
+
+
+    Три способоа определить Method reference:
+    object::method          | (x, y, z...) -> object.method(x, y, z...)
+    Class::instanceMethod   | (x, y, z...) -> x.instanceMethod(y, z...)
+    Class::staticMethod     | (x, y, z...) -> Class.staticMethod(x, y, z...)
+
+    Constructor/Array Constructor Reference - редкость
+    Class::new      | (x, y, z...) -> new Class(x, y, z...)
+    Class[]::new    | (int i) -> new Class[i]
+
+    obj = null
+    // NPE только в момент запуска лямбды!!
+    // obj должен быть effectively final!
+    doSmth(x -> obj.method(x));
+    // NPE здесь и сейчас
+    // obj не обязан быть effectively final
+    doSmth(obj::method)
+
+    Method references предпочтительнее!!
+
+    Методы, специально созданные, чтобы быть method references:
+    ...
+    list.removeIf(Object::isNull);
+    stream.filter(Objects::nonNull)...
+}
+
+Готовые функциональные типы {
+    Runnable
+    Supplier<T>
+    Consumer<T>
+    Biconsumer<T,U>
+}
+
+Комбинирование консьюмеров {
+    Consumer<String> foo = ...
+    List<String> list = ...
+
+    // Составной консьюмер, отправляющий
+    // объект сначала в первый, потом во второй
+    consumer<String> bar = foor.andThen(list::add);
+}
+
+Функции {
+    Function<T,R>
+    BiFunction<T,U,R>
+
+    f.andThen(g)        | g(f(x))
+    f.compose(g)        | f(g(x))
+    Function.identity   | x -> x
+}
+
+Операторы {
+    UnaryOperator<T>
+    BinaryOperator<T>
+
+    Композиция операторов
+    * UnaryOperator<T> extends Function<T,T>
+    * BinaryOperator<T> extends BiFunction<T,T,T>
+    * Статические методы minBy и maxBy формируют операторы min(x,y) и max(x,y) из компаратора
+}
+
+Предикаты {
+    Predicate<T>
+    BiPredicate<T,U>
+
+    Композиция предикатов
+    a.and(b).negate(); // ! (a(x) & b(x))
+    // Двумерный предикат (x,y) -> Objects.equals(x,y)
+    Object::equals
+    // Одномерные предикат y -> Objects.equals(x, y)
+    Predicate.isEqual(x)
+}
+
+Функциональные интерфейсы для примитивных типов {
+    BooleanSupplier
+    PSupplier
+    PConsumer
+    ObjPConsumer<T>
+    PFunction<T>
+    PToQFunction
+    ToPFunction<T>
+    ToPBiFunction<T,U>
+}
+
+Дефолтные методы Map interface
+работают автомарно в ConcurrentHashMap!
+
+Компараторы {
+    @AllArgsConstructor
+    public class Person {
+        @Getter
+        private final String firstName;
+        @Getter
+        private final String lastName;
+    }
+    List<Person> people = new ArrayList<>();
+
+    /*ПРАВИЛЬНО*/
+    Collectiond.sort(people, 
+        Comparator.comparing
+            (Person::getLastName));
+    // Ещё и по фамилии:
+    Collections.sort(people, 
+        Comparator
+            .conparing(Person::getLastName)
+            .thenComparing(Person::getFirstName));
+
+    ЖЕЕЕСССТТТЬЬЬ
+}
+
