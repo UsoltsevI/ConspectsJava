@@ -1,0 +1,76 @@
+БАЗЫ ДАННЫХ
+RDMBS - реляционные базы данных
+
+Язык SQL стандартизирован и слабо различается в разных системах
+
+JDBC - Java Database Connectivity
+Для взаимодействия с базами данных)
+JDBC Drivers!
+
+Connection Strings aka Database URLs
+В специфической для каждого драйвера манере узакывают сервер, порт, базу данных и иные параметры подключения.
+Примеры:
+jdbc:sqlserver://172.16.1.114:52836;databaseName=celesta
+jdbc:postgresql://127.0.0.1:5432/celesta
+jdbc:oracle:thin:192.168.110.128:1521:XE
+
+получение данных и итерация {
+    try (Connection conn = getConnection();
+            Statement stmt = conn.getStatement()) {
+        ResultSet result = stmt.executeQuery("selece name from speaker");
+
+        while (result.next()) {
+            System.out.println(result.getString("name"));
+        }
+    }
+}
+Закрываем все соединения!!!
+
+Никогда не будем так делать:
+String connString = "jdbc:postgresql://127.0.0.1:5432/celesta";
+Connection conn   = DriverManager.getConnection(connString);
+
+JDBC Connection - не потокобезопасный подход!
+
+Методы Connection {
+    * Управление транзакциями
+        * SetAutoCommit
+        * commit
+        * rollback
+    * Создание statements:
+        * createStatement() - создаёт универсальный объект для передачи SQL-команд
+        * prepareStatement(String sq1) - создаёт параметризованный шаблон SQL команды
+}
+
+AutoClosable <- Statement <- PreparedStatement
+Всегда использовать в блоке try!
+
+
+Statement и PreparedStatement
+int confId = ...
+try (PreparedStatement stmt =
+    conn.prepareStatement(
+        "select name from talk where conferencied = ?")) {
+    // устанавливает значение параметра
+    // начиная с единицы!!
+    stmt.setInt(1, confId);
+
+    ResultSet result = stmt.executeQuery();
+    while (result.next()) {
+        System.out.println(result.getString("name"));
+    }
+}
+
+ЗАПОМНИМ РАЗ И НАВСЕГДА: НЕЛЬЗЯ КОНСТРУИРОВАТЬ ЗАПРОСЫ В БАЗУ НА ОСНОВАНИИ ДАННЫХ ОТ ПОЛЬЗОВАТЕЛЯ!!!
+Неправильно:                    | Правильно:
+stmt.executrQuery(              | PreparedStatement stmt =
+    "SELECT * FROM users " +    |   conn.prapareStatement(
+    "WHERE name = '" +          |       "SELECT * FROM users WHERE name = ?");
+    userName + "'");            | stmt.setString(1, userName);
+                                | stmt.executeQuery();
+Это дико небезопасно!!!         | Это безопасно)
+
+
+Демо-пример
+Пишем базу данных выступлений на Java-конференциях
+
