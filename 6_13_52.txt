@@ -1,0 +1,134 @@
+$ mvn spring-boot:run
+
+ColoursApplication {
+    @SpringBootApplication
+    @Log
+    public class ColoursApplication implements CommandRunner {
+
+        private ColourPrinter colourPrinter;
+        
+        public ColoursApplication(colourPrinter colourPrinter) {
+            this.colourPrinter = colourPrinter;
+        }
+
+        public static void main(String args) { StringApplication.run(ColoursApplication.class, args); }
+
+        @Override
+        public void run(final String... args) {
+            log.info(colourPrinter.print());
+        }
+    }
+
+    public interface ColourPrinter {
+        String print();
+    }
+
+    public class ColourPrinterImpl implements ColourPrinter {
+        private RedPrinter redPrinter;
+        private BluePrinter bluePrinter;
+        private GreenPrinter greenPrinter;
+        
+        /*public ColourPrinterImpl() {
+            this.redPrinter = new EnglishRedPrinter();
+            this.bluePrinter = new EnglishBluePrinter();
+            this.greenPrinter = new EnglishGreePrinter();
+        }*/
+        public ColourPrinterImpl(RedPrinter redPrinter, BluePrinter bluePrinter, GreenPrinter grennPrinter) {
+            this.redPrinter = redPrinter;
+            this.bluePrinter = bluePrinter;
+            this.greenPrinter = greenPrinter;
+        }
+
+        @Override
+        public String print() {
+            return String.join(", ", redPrinter.print(), bluePrinter.print(), greenPrinter.print());
+        }
+    }
+
+    public Interface RedPrinter {
+        String Print();
+    }
+
+    public interface BluePrinter {
+        String print();
+    }
+
+    public interface GreenPrinter {
+        String Print();
+    }
+
+    public class EnglishRedPrinter implements RedPrinter {
+        @Override
+        public String print() {
+            return "red";
+        }
+    }
+
+    ...
+
+    @Configuretion
+    public class PrinterCongig {
+
+        @Bean
+        public BluePrinter bluePrinter() {
+            return new EnglishBluePrinter();
+        }
+        
+        ...
+
+        @Bean
+        public ColourPrinter colourPrinter(BluePrinter bluePrinter, RedPrinter redPrinter, GreenPrinter greenPrinter) {
+            return new ColourPrinterImpl(redPrinter, bluePrinter, greenPrinter);
+        }
+    }
+
+    public class SpanoshRedPrinter implements RedPrinter {
+        @Override
+        public String print() {
+            return "rojo";
+        }
+    }
+
+    ...
+
+
+}
+
+@SpringBootApplication includes:
+ * @Configuration
+ * @ComponentScan
+ * @EnableAutoConfiguretion
+ * And more...
+
+
+
+application.properties {
+    server.port=8181
+}
+
+application.yml {
+    server:
+        port: 8282
+}
+
+ENVAROMENT VARIABLES {
+    $ SERVER_PORT=8383 ...
+    $ export SERVER_PORT=8484
+}
+
+
+
+@Configuration
+@CongigurationProperties(prefix = "pizza")
+...
+public class PizzaConfig {
+    private String sause;
+    private String topping;
+    private String crust;
+}
+application.properties {
+    pizza.sause=bbq
+    pizza.topping=chicken
+    pizza.crust=stuffed
+}
+
