@@ -1,0 +1,261 @@
+Streams {
+    * Появились в Java8, вместе с lambdas & method references
+    * Обработка конечных и потенциально бесконечных наборов данных
+    * Декларированный подход к обработке данных: описываем что хотим получить, а не как мы хотим это получить.
+    * Прозрачный параллелизм
+}
+
+Пример {
+    //Преобразуем поток в поток 
+    List<Block> blocks = ...;
+    
+    Stream<Block> bloskStream = blocks.stream();
+
+    Stream<SquashedBlock> squashedStream =
+    blockStream.map(Block::squash);
+        
+
+    // Фильтруем
+    Stream<SquashedBlock> filtederStream =
+        squashedStream.filter(block ->
+            block.getColor() != YELLOW);
+
+    filterStream.forEach(System.out::println);
+    
+    // Или можно одной строкой:
+    blocks.stream()
+        .map(Block::squash)
+        .filter(block ->
+            block.getColor() != YELLOW)
+        .forEach(System.out::println);
+}
+
+Три категории методов Stream API {
+    // Создание стрима
+    List<String> names = menu.stream();
+
+    // Промежуточные операции
+        .filter(d -> d.getCalories() > 300)
+        .map(Dish::getName)
+        .limit(3)
+
+    // Терминальная операция
+        .collect(Collectors.toList());
+
+}
+
+Создание стрима {
+    // Пустого
+    Stream<Foo> stream0 = Stream.empty();
+
+    // Перечисление элементов
+    Stream<String> stream1 =
+            Stream.of("gently", "down", "the", "stream");
+
+    // Из массива
+    Stream<String> stream2 =
+            Arrays.stream("gently down the stream".split(" "));
+
+    // Из коллекции
+    List<String> strings = ...
+    Stream<String> stream3 = strings.stream();
+
+    // Из API
+    Path path = Paths.get(...);
+    Stream<Path> stream4 = Files.list(path);
+}
+
+Фичи {
+    Конкатенация стримов {
+        Stream<Foo> s1 = ...;
+        Stream<Foo> s2 = ...;
+        Stream<Foo> s = Stream.concat(s1, s2);
+    }
+
+    Порождение стримов (generate) {
+        // С помощью генератора
+        Stream<Double> rabdoms = 
+            Stream.generate(Math::random);
+            
+            // ХОТЯ ЛУЧШЕ
+            DoubleStream doubles =
+                ThreadLocalRandom.current().doubles();
+
+    }
+
+    Порождение стримов (iterate) {
+        // Итеративно
+        Stream<Integer> integers = 
+            Stream.iterate(0, x -> x + 1);
+            
+            // ХОТЯ ЛУЧШЕ
+            IntStream range = IntStream.range(0, 1000);
+    }
+
+    Пример для чисел Фибоначчи {
+        Stream.iterate(new int[]{0, 1}, 
+                t -> new int[]{t[1], t[0] + t[1]})
+            .mapToInt(t -> t[0]);
+    }
+
+    Spliterator: Самый общий способ создания стрима {
+        public  interface Spiterator<T> {
+            boolean tryAdvance(Consumer<? super T> action);
+            Spliterator<T> trySplit();
+            long estimateSize();
+            int characteristics();
+        }
+
+        StreamSupport.stream(Spliterator<T> spliterator, boolean parallel);
+    }
+
+    Характеристики сплитератора {
+        ORDERED,
+        DISTINCT,
+        SORTED,
+        SIZED,
+        NONNULL,
+        IMMUTABLE,
+        CONCURENT,
+        SUBSIZED
+    }
+}
+
+Промежуточные итоги {
+    * Есть много стандартных способов порождения стримов, для простых случаев не надо "изобретать велосипедЭ
+    * Скорей всего, вам не понадобиться самому реализовывать Spliterator
+    * Быстродеёствия ради, есть "примитивные стримы" (три типа):
+        * IntStream (эффективнее, чем Stream<Integer>
+        * LongStream
+        * DoubleStream
+}
+
+Преобразование стримов в стримы: получение "головы" и "хвоста" {
+    // методы интерфейса Stream
+
+    // голова
+    Stream<T> limit(long maxSize);
+    Stream<T> takeWhile(Predicate<? super T> predicate)
+
+    // хвост
+    Stream<T> skip(long n)
+    Stream<T> dropWhile(Predicate<? super T> predicate)
+}
+
+Продолжение фич {
+    filter {
+        Stream<T> filter(
+            Predicate<? super T> predicate);
+        }
+    }
+
+    map {
+        <R> Stream<R> map(Function<? super T, 
+                                    ? extends R> mapper);
+
+        IntStream mapToInt(
+                    ToIntFunction<? super T> mapper);
+
+        LongStream mapToLong(
+                    ToLongFunction<? super T> mapper);
+
+        DoubleStream(
+                    ... );
+    }
+
+    flatMap {
+        Path path = ...
+        Pattern separator = Patter,compile("\\s");
+        
+        try(Strem<String> line = Files.lines(path, StandartCharsets.UTF_8);
+            // НЕ ТО, что нам надо!
+            // Stream<Stream<String>> streamString =
+            //                      lines.map(separator::splitAsStream);
+
+            // То, что нам надо!
+            Stream<String> words = lined.flatMap(separator::splitAsAtream);
+            words.forEach(System.out::println);
+        }
+
+        /* А также
+          flatMapToDoubel
+          flatMapToInt
+          flatMapToLong
+          */
+    }
+
+    distinct {
+        // Внутренний Set
+
+        Stream.of(1, 5, 8, 7, 8, 5, 9, 9)
+            .distinct()
+            .forEach(System.out::println);
+        
+        // Выведет 1, 5, 8, 7, 9
+
+        // С ним надо быть осторождее, программа может зависнуть
+        // Привер:
+        ThreadLocalRandom.current().ints(1, 10)
+            .distinct()
+            .forEach(System.out::println);
+            // Программа зависнет, когда все значения от 1 до 10. Можно
+            // пофиксить, например, указав limit(9) после distinct.
+    }
+
+    sorted {
+        // Внутренний отсортированный список
+        
+        Stream.of(1, 2, 8, 7, 8, 5, 9, 9)
+            .sorted()
+            .forEach(System.out::println);
+
+        // Выведет 1, 5, 5, 7, 8, 8, 9, 9,
+    
+        // Не имеет смысла для бесконечных стримов
+    }
+
+    peek (отладочный метод) {
+        * Не меняет исходный стрим
+        * Предназначен для "подглядывания" за промежуточным состоянием элементов
+        * В качестве аргумента часто используется Syste.out::println
+        * При параллельных вычислениях может быть вызван в произвольном порядке в проивзольном потоке выполнения
+
+        Stream<T> ppek(Consumer<? super T> action);
+    }
+}
+
+Терминальные операции {
+    // Предъяви первый элемент
+    Optional<T> findFirst();
+    // Предъяви любой элемент
+    Oprional<T> finaAny(); // более хорошая практика
+
+
+    // Проверь, удовлетворяет ли условию...
+    //...какой-то
+    boolean anyMatch(Predicate<? super T> predicate);
+    //...все
+    boolean allMatch(...);
+    //...никакой
+    boolean noneMatch(...);
+
+    // КОРОТКИЕ ЗАМЫКАНИЯ!
+
+
+    forEach {
+        void forEach(Consumer<? super T> action);
+            * В случае параллельного выполнения нет гарантий последовательности
+            * Нет гарантий относительно того, в каком потоке будет выполнена лямбда
+    }
+
+    reduce (with identity) {
+        * Ассоциативная функция + "identity value"
+        * Промежуточные результаты - immutable values
+        * Вопрос: назовите примеры ассоциативных операций в маткматике?
+
+        T reuce(T identity, 
+            BinaryOperator<T> accumulator);
+    }
+}
+
+
