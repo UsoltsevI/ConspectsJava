@@ -1,0 +1,351 @@
+Concurrency - конкурентное выполнение
+* Одна программа - много одновременно выполняющихся тредов (threads)
+* Зачем нужно? Чтобы побыстрее!
+
+Где можно получить выгоу от cuncurrency?
+* Много CPU-ядер, вычислительная задача хорошо разделяется на подзадачи 
+* Подзадачи блокируются на вводе/выводе, можно параллельно ждать других или делать что-то полезное
+* Нужно быстро отреагировать на запрос, а потом дать детальный ответ (пользовательский интерфейс)
+* Многопользовательский сервис (каждый запрос в своём треде)
+
+Где мы НЕ можем получиь выгоду от [увеличения] concurrency?
+* CPU-bound задача не будет решаться быстрее, если тредов больше, чем ядер
+* Задача плохо параллелизуется (упирается в неразделяемый процесс)
+* На ограничивает закон Амдала (дана формула)
+
+На самом деле всё хуже, работает Universal Scalability Law
+
+Промежуточный вывод
+* Перед тем, как встать на скользкую тропу многопоточного программирвоания, подумайте:
+    * нужно ли это для решения задачи?
+    * насколько многопоточным должно быть решение?
+* Вас предупредили
+
+Многопоточность в Java (с самой первой версии!) {
+    class CalcSquare extends Thread {
+        final int argument;
+        int result;
+
+        CalcSquare(int argument) {
+            this.argument = argument;
+        }
+
+        @Override
+        public void run() {
+            // "сложные" вычисления
+            result = argument * argument;
+        }
+    }
+
+    // Запуск параллельных вычислений через Thread API
+    * NB: в современной реальности вы не будете пользоваться Thread API
+    {
+        CalcSquare t1 = new CalcSquare(2);
+        CalcSquare t2 = new CalcSquare(3);
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+        System.out.printf("%d, %d%n", t1.result, t2.result);
+        // output: 4, 9
+    }
+
+    Проблемы с shared state
+    * Race condition
+    * State values
+    * Reordering
+
+    Race Condition {
+        class Dum[Counter {
+            int count;
+            void increment() {
+                count++;
+            }
+        }
+
+        DumpCounter c1 = new DumpCounter();
+        IntStream.range(0, 1000000).forEach(i -> c1.increment());
+
+        DumbCounter c2 = new DumbCounter();
+        IntStream.range(0, 1000000).parallel().forEach(i -> c2.increment());
+
+        System.out.printf("%d, %d%d", c1.count, c2.count);
+        // 1000000, ?????? - не больше 1000000
+    }
+
+    Stale values {
+        class DumpWayToFallAsleep implements Runnable {
+            private boolean asleep;
+
+            public void setAsleep(boolean asleep) {
+                this.asleep = asleep;
+            }
+
+            @Override
+            public void run() {
+                while (!asleep) {
+                    // countSomeSheep
+                    // УСНЁМ ЛИ МЫ? Не обязательно
+                }
+            }
+        }
+
+        Другой thread  гарантированно будет видеть состояние, которое выставил внешний thread
+    }
+
+    Reordering {
+        class PossibleReordering {
+            static int x = 0, y = 0, a = 0, b = 0;
+
+            public static void main(String... args)
+                            throws InterrupterException {
+                // другой способ запуска треда (тоже не будем пользоваться)
+                Thread one = new Thread(() -> {
+                        a = 1, x = b;
+                    });
+                Thread two = new Thread(() -> {
+                        b = 1; y = a;
+                    });
+                one.start(); two.start();
+                one.join();  two.join();
+                System.out.printf("%d, %d", x, y);
+                // ??, ??
+                // 1, 0
+                // 0, 1
+                // 0, 0
+                // 1, 1
+            }
+        }
+    }
+}
+
+Промежуточные выводы:
+* Из-за reordering и других низкоцровневых особенностей нельзя рассуждать о результате работы одного треда с точки зрения другого треда как о проежуточном резульате выполнения исходного кода
+* Все проблемы с паралленьными вычислениями связаны с shared state
+* показанные здесь проблемы появляются недетерминированно
+* Любая программа с доступом к shared state без должной синхронизации - сломана, даже если "вчера работала на моей машине"
+
+
+Модель памяти {
+    int aVariable = 42;
+    * Модель памяти (Java Memory Model, JMM) - спецификация языка и виртульной машины, отвечающая на вопрос: "при каких условиях поток, читающий переменную aVariable, увидит значение 42?"
+
+    Happens-before
+    * JMM определяет частичный порядок на всех десвтяих в Java-программе, называемой happens-befor
+    * Отношение happens-before транзитивно
+    * Чтобы действие В гарантированно видело результат работы А, достаточно, чтобы А < B.
+
+    Правила {
+        Program order rule
+        * В рамках одного треда все действич happend-before в порядке их определения в исходном коде программы
+        * Иными словами, онопоточные программы выполняются без сюрпризов
+
+        Thread start & termination rule
+        * Вызоы threadA.start() happens-before всех операций в потоке threadA
+        * Любая операция в потоке threadA happens-before обнаруженная другим потоком хавершения threadA, либо путём выхода из threadA.join(), либо путём проверки threadA.isAlive() == false.
+        * Благодаря этому правиле, наш самый первый пример на параллелизацию работает корректно.
+
+        Ключевое слово volatile
+        * Переменные классов могут быть определены с ключевым словом volatile
+        * Запись в volatile-переменную happens-before чтения из этой переменной в другом потоке
+        * Это автоматически делает видимыми изменения в других переменных. Полагаеться, на то не рекомендуется: это работае, но делает код хрупким. В процессе рефакторнга можно поменять порядок доступа к переменным и тем самым незаметно поломать программу. То есть желательно объявлять volatile всё, что мы собираемся читать.
+
+        Чиним stale value при помощи volatile {
+            class NotSoDumbWayToFallAsleep implements Runnable {
+                private volatile boolean asleep;
+                
+                public void setAsleep(boolean asleep) {
+                    this.asleep = asleep;
+                }
+
+                @Override
+                public void run() {
+                    while (!asleep) {
+                        // countSomeSheep
+                        // ...
+                    }
+                }
+            }
+        }
+
+        final-поля {
+            * Если объект правильно опубликован, т.е. ссылка на него не утекает во время выполенения конструктора - final-поля объекта доступны всем тредам без синхронизации
+            * Лучший способ борьбы с проблемами mutable state - использовать immutable state где только можно 
+        }
+        
+        Неатомарные операции: final не годится, volatile не спасёт
+    }
+}
+
+Блокировки {
+    // Reenteant так назвается потому,
+    // что одному и тому же тренду позволено входить повторно
+    prvate ReentrantLock bankLock = new ReentrantLock();
+    
+    void moneyTransfer(int from, int to, int amount) {
+        bankLock.lock();
+        
+        try {
+            accounts[from] -= amount;
+            accounts[to]   += amound;
+        } finally {
+            bankLock.unlock();
+        }
+    }
+}
+
+Condition Objects {
+    private ReentrantLock bankLock = new ReetrantLock();
+    private Condition sufficientFunds = bankLock.newCondition();
+    
+
+    void moneyTransfer(int from, int to, int amount) {
+        bankLock.lock();
+        try {
+            while (accounts[from] < amount) {
+                sufficientFunds.await();
+            }
+            
+            accounts[from] -= amount;
+            accounts[to]   += amount;
+        
+            sufficientFunds.signalAll();
+
+        } finally {
+            bankLock.unlock();
+        }
+    }
+
+    Что происходит?
+    * await() отпускает блокировку и переводит тред в ждущее состояние
+    * signalAll() сигнализирует всем ждущим тредам, что что-то поменялось
+    * Выход из await() снова захватывает блокировку
+    * При выходе из await() мы внось проверяем условие, потому что:
+        * Сигнал мог быть по другому поводу
+        * возможны "спонтанные пробуждения"
+
+    Правильный паттерн ожидания condition:
+    while (!okToProceed())
+        condition.await();
+}
+
+Intrinsic lock {
+    * Начиная с Java 1.0, каждый объект имеет встроенные (intrinsic) lock
+    * У каждого trinsik lock есть один contition
+
+    Пример выше, но с помощью intrinsic lock {
+        // enter intrinsic lock on *this*
+        synchronized void moneyTransfer(int from , int to, int amount) {
+            while (accounts[from] < amount)
+                wait(); // wait on intrinsic object's lock condition
+
+            accounts[from] -= amount;
+            accounts[to]   += amount;
+            
+
+            notifyAll(); // notify all threads waiting on the condition
+        }
+    }
+
+    Synchronized-блок {
+        другая форма использования intrinsic lock:
+
+        private Object lock = new Object();
+        
+        void moneyTransfer(int from, int to, int amount) {
+            synchronized (lock) {
+                while (accounts[from] < amount)
+                    lock.wait();
+            
+                accounts[from] -= amount;
+                accounts[to]   += amount;
+            
+
+                lock.notufyAll();
+            }
+        }
+
+        Это даже лучше)
+    }
+
+    Промежуточный итог по intrinsic conditions {
+        * Нужно работать по строгому паттеру:
+            * Синхронизация
+            * while-loop wait
+            * нотофикация
+        * Нужно держать в уме:
+            * по intrisic lock какого объекта синхронизируемся
+            * по condition какого объекста ждём
+            * треды. ждущие на condition какого объекта нотифицируем (это всё должен быть один объект)
+        * В общем, это низкоуровневый и сложный механизм. Его понимание пригодиться на собеседованиях, но, скорее всего, вам не надо будет им пользоваться
+    }
+}
+
+Промежуточный итог по вышесказанному {
+    * Где возможно, используйте immutable state: он автоматически потокобезопасен
+    * Используйте volatole переменные или синхронизируйте для досупа к mutable state
+    * Удерживайте блокировку во время выполнения операций, которые должны быть атомарными
+    * Повторним ещё раз: программа с shared mutable state без должной синхронизации - сломанная программа
+    * Думайте о потокобезопасности всё время
+    * Понимание JMM помогает
+}
+
+
+Всегда можно сделать threadDump в работающем Java-приложении
+
+
+DeadLock {
+    Перепутанный порядок блокировки {
+        class LeftRoghtDeadlock {
+            private final Object left = new Object();
+            private final Object right = new Object();
+
+            void leftRight() {
+                synchronized (left) {
+                    synchronized (right) {
+                        doSomething();
+                    }
+                }
+            }
+        
+            void rightLeft() {
+                synchronized (right) {
+                    synchronized (left) {
+                        doSomethingElse();
+                    }
+                }
+            }
+        }
+    }
+
+    Выводы:
+    * Если процедура захватывает несколько блокировок, возсожен deadlock
+    * Во избежание deadlocks нужно следить за тем, чтобы блокировки всегда захватывались в одном и том же порядке. Иногда неочевидно, как это сделать.
+    * Если вы захватили блокировку - закончите с ней как можно быстрее, не вызывайте внешних методов
+}
+
+
+ПОТОКОБЕЗОВПАСНЫЕ СТРУКТУРЫ ДАННЫХ
+Неблокирующие алгоритмы:
+* Блокировка (через synchronized или ReentrantLock) решает вопрос координации действий разных тредов с переменной
+* Но есть много тредов конкурирут за блокировку (high lock contention), затраты ресурсов на координацию тредов становятся значительными
+* Альтернативой являются неблокирубщие алгоритмыЮ использующие поддержку специальных атомарных машинных инструкций (compare-and-swap)
+* В Java-библиотеке доступны классы атомарных инструкций переменных и потокобезовасный коллекции, реализованные в том числе на неблокирующих алгоритмах
+
+Atomics {
+    * package java.util.concurrent.atomic
+        * AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference
+        * AtomicIntegerArray, AtomicLongArray, AtomicReferenceArray
+    * Могут быть использованы как "улучшенеые volatile-переменные", т.к. результат вызова set(...) виден другим дредам при вызове get(...)
+    * Поддерживают атомарные операции
+
+    Куча атомарных операций...
+} 
+
+Потокобезопасные коллекции {
+    * В ранних версиях Java можно было "сделать" коллекцию потокобезопасной, обернуы в Collections.synchronizedXXX(...). Это сериализовываол любой доступ к внутреннему состоянию коллекции. Из-за поддержки обратной совместимости сейчас так тоже можно, но не нужно.
+    * Цена такого решения - плохой параллелизм: конкуренция за блокировку (lock contenction)
+    * С версии 5 появились классы, спциально разработанные для потокобезопасности, с меньшим количеством блокировок.
+    * Их использование является предпочтительным
+
+}
