@@ -1,0 +1,230 @@
+SPRING!!!
+
+Книга Pro Spring 5
+
+Spring Framework {
+    * DI
+    * AOP
+    * Тестирование
+    * Интеграция с огрмным количеством технологий
+    * Очень развитый (и продолжающий активно развиваться)
+}
+
+Spring Beans {
+    * Spring beans - это переиспользуемые программные компоненты.
+    * Годится любой класс, как наш, так и из сторонней библиотеки
+}
+
+Переписываем наш пример с "самодельного" фреймворка на Spring {
+    @ComponentScan("edu.phystech.rebotlecturer")
+    public class Main {
+        public static void main(String[] args) {
+            ApplicationContext ctx =
+                new AnnotationConfigApplicationContext(Main.class);
+            RobotLecturer lecturer = ctx.getBean(RobotLecturer.class);
+            lecturer.lecture();
+        }
+    }
+}
+
+
+Способы конфигурации Spring:
+* Разновидности конфигураций Spring:
+    * Annotation-based
+    * XML-based
+    * Groovy-based
+* Мы будем рассматривать только annotaion-based, как наиболее употребимую в настоящее время и пактичную
+* В огромном количестве тьюториалов (и проектов) ещё встречается XML-конфигурация
+
+
+Как определять бины
+* Classpath Scanning: ищем проаннотированные классы в заданных пакетах.
+    * @Component
+        * @Service
+        * @Controller
+        * @Repository
+* Фабричные методы
+    * @Configuretion -> @Bean
+
+Пример фабричного метода:
+@Configuretion
+public class AppConfig {
+    @BEan
+    @Scope(BeanDefenition.SCOPE_PROTOTYPE)
+    public Color randomColor() {
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+        return new Color(random.nextInt(256),
+            rabdom.nextInt(256), random.nextInt(256));
+    }
+}
+* Класс конфигурации должен быть либо явно указан через конструктов AnnotationConfigApplicationContext, либо доступен через сканирование пакетов (тогда можно аннотировать класс как @ Configuration)
+* Чтобы прописывать в классе бины, надо пользоваться @Bean
+
+
+Classpath scanning
+@ComponentScan("edu.phystech.robotlecturer")
+    Атрибуты аннотации:
+* String[] basePackages - базовые пакеты для сканирования в поисках аннотированных компонент
+* Class<?>[] basePackageClasses - как типобезопасная альтернатива, можно указать классы. Пакуты каждого из указанных классов будут просканированы
+* Плюсы: удобно
+* Минусы: классы должны быть проаннотированы как @Componene, @Service и т.п., что не всегда возможно в сторонних библиотеках
+
+
+Bean scope
+* SCOPE_SINGLETON - по умолчанию. Создаётся один при первом запроче и всюду впрыскивается единственный экземпляр.
+* SCOPE_PROTOTYPE - создаётся новый при каждом запроче.
+* Есть ещё всякие, и можно создавать свои.
+
+
+@Lazy
+* По умолчанию все синглетоны создаются при поднятии контейнера (чтобы fail fast, и избежать задержек при работе приложения)
+* Для конкурентного бина это поведение можно изменить при помощи аннотации @Lazy
+* Ленивая инициализация - не такая хорошая идея, как кажется на первый взшляд
+
+
+Bean name
+* Каждый бин получает имя (id).
+* По умолчанию, имя вычисляется из имени класса (SpeakerImlp -> "speakerImpl") или фабричного метода (getSpeaker -> "speaker").
+* Имя бина можно задать явно в параметре аннотации @Component и других (например: @Service("bestSpeaker")).
+
+
+Виды injection:
+* Constructor
+* Setter
+* Field
+* Lookup method
+
+Constructor injection:
+@Component
+@RequiredArgsConstructor
+public class RobotLecturer {
+    // автоматически будут переданы в конструктор
+    private final Lecture lecture;
+    private final Speaker speaker;
+    ...
+}
+* Внешне может быть незаметен (особенно с Lombok)
+* Хорош для создания иммутабельных объектов
+* Много параметров конструктора? - А точно сколько надо?
+
+
+Setter injection
+@Autowired
+void setLecture(Lecture lecture) {
+    // сеттер будет автоматически вызван после конструирования
+    this.lecture = lecture;
+}
+* Хорош в ситуации, когда компонента сама себе способна предоставить зависимость "по умолчанию"
+
+
+Field injection
+@Component
+public class RobotLecturer {
+    // будут установлены через рефлексию после конструирования
+    @Autowired
+    private Lecture lecture;
+    @Autowired 
+    Speaker speaker;
+    ...
+}
+* Не плодит в классе сеттеры и конструкторы, но в целом сильно связывает код и считается не очень удачной практикой
+* Хотя, в классах тестов - это ровно то, что нужно
+
+
+Lookup method injection
+Проблема бинов с разным жизненны циклом: SCOPE_PROTOTYPE не спасает
+@Component
+@Scope(ConfigurableBeanFactory.SCOPE_PROROTYPE_
+public class Bar { ... }
+//
+@Component
+public class Foo {
+    @Autowired
+    private Bar bar;
+    
+    public void bar() {
+        // заинжектированный экземпляр bar всегда один и тот же
+    }
+}
+//
+//
+//
+@Component
+public abstract class Foo {
+    @Lookup
+    abstract Bar getBar();
+
+    public void bar() {
+        Bar b = getBar();
+        // теперьв b будет взякий раз новое (ну или одно и тоже,
+        // если убрать SCOPE_PROTOTYPE, хотя где тогда смысл?)
+    }
+}
+Foo foo = ctx.getBean(Foo.class);
+foo.bar(); foo.bar(); ...
+- Как, мы инстанцируем абстрактный класс?! - Нет, мы же инстанцируем обёртку, на самом деле.
+
+Lookup-метод может и не быть абстрактным:
+@Component
+public class Foo {
+    // главное - чтобы не был приватизм
+    @Lookup
+    Bar getBar() {
+        return null;
+    };
+    public void bar() {
+        // не null!
+        Bar b = getBar();
+        ...
+    }
+}
+
+Надо учитывать неяыные привязки по имени в Spring!!!
+
+@Qualifier("bar1") - примеря явной привязки по имени
+private Bar bar;
+
+@Primary - указыкаем над default имплементацией
+
+Но гораздо чаще нам нужны все 3 имплементации!!
+@Component
+public class Foo {
+    @Autowired
+    private List<Bar> bars;
+    // ИЛИ
+    @Autowired
+    private Map<String,Bar> bars; // ключ == id
+    ...
+} Заинжектит в этот List все имплементации, который найдёт 
+
+
+
+Впрыскивать можно не только бины, но и что-то попроще:
+@Configuretion
+// Путь к файлу с настройками
+@PropertySource("classpath:config.properties")
+public class Config {
+    ...
+}
+@Compontnt
+public class Foo {
+    @Value("${url}")
+    String url;
+
+    @Value("${password}")
+    String password;
+    ...
+}
+Также можно использовать SpEL-выражения, например #{bar.url}.
+
+
+Инициализаиця
+* Конструктор не годится в качестве инициализирующиего петода, выполняющегося после всех впрыскиваний
+* @PostConstruct - стандартная Java-аннотация, может быть установлена методом инициализации
+* Если навесить аннотацию в классе нельзя, то @Bean(initMethod="init")
+
+Финализация
+* Симметрично инициализации - при завершении работы контейнера
+* При завершении приложения вызывается context.destroy(), запускающий механизм финализации
+* @PreDestroy - стандартная Java-аннотация
+* Если навесить аннотацию в класс нельзя, то @Bean(destroyMethod="destroy")

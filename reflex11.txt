@@ -1,0 +1,267 @@
+РЕФЛЕКСИЯ
+
+Иногда при чтении кода начинает рябить в глазах..
+
+Coulping & Cohesion
+ Плохо      Хорошо
+
+Как бы мы решали эту проблему? {
+    // Помечаем то, что хотим сериализовать, не сериализуем по умолчанию
+    // Вариант: наоборот, помечать то, что сериализовать не хотим
+    public class Person {
+        @Published
+        private final String firstName;
+        ...
+    }
+
+    // Как вариант...
+    JsonSerializer<Person> ser = new JsonSerializer<>(Person.class);
+    JSONObject json = set.serialize(p);
+
+    Контроллер {
+        public class Controller {
+            private final Service service;
+
+            @Command("foo")
+            void doSomething() { service.foo(); }
+
+            ...
+
+            @Command() // default
+            void help() { service.help(); }
+        }
+
+        new CommandDispatcher(new Controller(srv)).executeCommand("foo");
+    }
+}
+
+Аннотации {
+    * Аннотации - сспособ разметри кода на JAva, через добавление метаинформации к различнм элементам программы на Java
+    * Работают приблизительно как модификаторы(public, static), но существует развитый механизм создания собственных аннотаций
+    * Могут быть обработаны на трёх этапах:
+        * на этапе кодогенерации перед компиляцией (annotaion processing, Lenguage Model API)
+        * на этапе инструментации байт-кода (Instrumentation API)
+        * на этапе выполнения кода (через Reflection API)
+}
+
+Синтаксис определения аннтаций {
+    modifiers @interface AnnotationName {
+        type elementName();
+        ...
+        type elementName default value;
+    }
+
+    Пример
+    public @interface BugRepost {
+        String assignedTo() default "";
+        int severity();
+    }
+}
+
+Annotaion Interfaces {
+    * Подобно тому, как enum-классы - это специальный вид классов, annotation-интерфейсы - это специальный вид интерфейсов
+    * Наследуются от java.lang.annotaion.Annotation.
+    * Нальзя расширять наследованием, нельзя параметризовать через generics
+    * Методы не могут иметь параметров
+
+    Допустимые типы методов аннотаций
+    * Примитивы
+    * String
+    * Class (с возможным ограничением параметра, вроде Class<? extends MyClass>)
+    * Другие аннотации
+    * Массивы из вышеперичисленного (но не массивы массивов)
+
+    Пример определения интерфейса аннотации {
+        public @interface BugReport {
+            // вложенные типы допустимы!
+            enum Status { FIXED, ... }
+            boolean showStopper() default false;
+            String assignedTo() default "";
+
+            // метакласс, речь впереди
+            Class<?> testCase() default Void.class;
+            Status status() defaule Status.FIXED;
+
+            // Тип аннтации. При конструктировании используется синтаксис
+            // аннотации, речь вперели
+            Reference ref() default @Reference(id = "");
+            String[] reportedBy();
+        }
+    }
+
+    Использование аннотаций {
+        @AnnotaionName(elementName1=value1, ...)
+        ...
+        // Порядок не имеет значения
+        // Если заданы значения по умолчанию, то можно пропускать
+        // Если параметров нет или все имеют умолчания, то можно не ставить скобки
+        // Если параметр не задан default, то его надо обязательно определять, иначе ошибка компиляции
+
+
+        Массивы и другие аннотации
+        // Массивы задаются в фигурных скобках
+        // Можно конструировать вложенные аннотации
+        // null значения присваивать нельзя, даже в default
+    }
+
+    Где можно использовать
+    * В декларациях
+    * При использовании типов
+    * То есть почти везде
+
+    Пример использования аннотаций в декларациях {
+        @Entity
+        public class User {
+
+            @Caption("user")
+            public User getUser(@Param("id") String userID) {
+                @SuppressWarnings("unchecked")
+                List<User> users = ...
+            }
+        }
+
+        class Cache<@Immutable V> {
+
+        }
+    }
+
+    Можно анотировать пакеты {
+        @GPL(version="3")
+        package edu.phystech.corejava;
+        impiort org.gnu.GPL;
+    }
+    
+
+    Аннторирование использования типов {
+        // аннотированный параметр, утверждает, что userID -- не 'null'
+        User getUset(@NonNull String userId) { ... }
+    
+        // или ...
+        List<@NonNull String> list = ...
+    }
+
+    JAva8+: аннотирование использования типа в this {
+        public class Foo {
+            // ...
+            void baz(@ReadOnly Foo this) {
+                ...
+            }{
+        }
+    }
+
+    Занкомые аннотации
+    @Override
+    @FunctionalInterface
+    @SafeVarargs // страшный костыль
+    @Depricated
+    @SurpressWarnongs
+    @Generated
+
+    Аннотации успавляются аннотациями {
+        // Какие элементы когда могут быть аннотированы
+        @Terget({ElementType.TYPE, ElemetType.METHOD})
+
+        // На каком уровне сохраняются эти аннотации
+        @Retention(RetentionPolicity.Source)
+        public @interface BugReport {
+            ...
+        }
+    }
+
+    Другие мета-аннотации
+    @Documented
+    @Inherited
+    @Repeatable
+}
+
+Рефлексия (Reflection API) {
+
+    // Получаем информацию в Runtime
+    Class<? extends Employee> ce = e.getClass();
+    Class<? extends Employee> xm = m.getClass();
+
+    Класс Class<T> параметризован!
+
+    Class literals {
+        * Литералы - строки в коде, порождающие объекты или значения. Напримем "foo" - литерал, попрождающий объект String с содержанием "foo"
+        * Литералы классов - спеуиальный вырежения в языке, порождающие объекты с типом Class<...\>
+
+        Class<String> c1 = String.class;
+        Class<Integer> c3 = int.class;
+    }
+
+    Странные названия классов-массивов
+    byte[] -> [B
+
+    Другой способ получшения мета-клсса {
+        // Может быть выброшени ClassNotFoundException
+        // параметр типа тут никак не может быть известен
+        Class<?> clazz = Class.forName("edu.phystech.hello.Manager");
+
+        // Есть две формы forName:
+        * Загрузчик вызванного метода, статическа инициализация
+        * Кастомный закрузчик, статическая инициализация по запросу
+    }
+
+    Помимо рефлексии часто используются для загрузки ресурсных файлов
+
+    Рефлексич и Generics {
+        * В runtime по объекту нельзя определиь параметры типов (например, отличить List<Employee> от List<Integer>)
+        * Анализируя параметизованные классы или методы с помощью рефлексии можно узнать свю информацию прое его параметры типов
+    }
+
+    ReflectionUtils {
+        * ReflectionAPi довольно старое, использует массивы
+        * Частые задачи не имеют готовых методов
+        * Можно пользоваться готовыми библиотеками, например, org.reflections:reflections
+    }
+}
+
+
+Получение членов класса {
+    * getXXX
+    * getDeclaredXXX
+
+    * Можно открыть доступ через setAccessible(tru)
+}
+
+
+Библиотека Mokito! {
+    class NaiveControllerTest {
+        private final Service srv = Mokito.mock(Service.class);
+        private final NaiveController nativeController = new NaiveController(srv);
+
+        @Test
+        void executeFooCommand() {
+            naiveController.executeCommand("foo");
+            Mokito.verify(srv, Mokito.times(1)).foo();
+        }
+    }
+}
+
+Контроллер здорового человека {
+    @AllArgsConstructor
+    public class Controller {
+        private final Service service;
+
+        @Command("foo");
+        void doSomething() { service.foo(); }
+
+        @Command("bar")
+        void bar() { service.bar(); }
+
+        @Command()
+        void help() { servise.help(); }
+    }
+}
+
+Книга Design Patterns!
+
+Dependency Injection!!!
+
+DI Frameworks:
+* Google Guice
+* JBoss Seam Framework
+* PicoContainer
+* Spring
+
