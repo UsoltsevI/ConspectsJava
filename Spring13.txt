@@ -228,3 +228,82 @@ public class Foo {
 * При завершении приложения вызывается context.destroy(), запускающий механизм финализации
 * @PreDestroy - стандартная Java-аннотация
 * Если навесить аннотацию в класс нельзя, то @Bean(destroyMethod="destroy")
+
+
+Пример {
+    @ComponentScan("edu.phystech.robotlecturer")
+    // @EnableAspectJAutoProxy
+    public class Main {
+        public static void main(String[] args) {
+            ApplicationContext ctx = new ApplicationConfigApplicationContext(Main.class);
+            RobotLecturer lecturer = ctx.getBean(RobotLecturer.class);
+            lecturer.lecture();
+        }
+    }
+}
+
+
+Aspect-oriented programming спешит на помощь
+* Типичные задачи:
+    * Логирование: каждый выхов метода должен отмечаться в логе!
+    * Безопасность: при вызове каждого метода надо проверять, имеем ли мы право на вызов!
+    * Управление транзакциями: перед началом метода открывать транзакцию, при удачном завершении коммитить, при неудачном - отбрасывать
+* AOP помогает решать эти задачи без дублирования кода внутри методов
+* Большое количество аспектов уже написано
+
+Терминологии AOP
+* Joinpoint - место в коде, в выполнение которого мы "вмешиваемся" ( и начинаем выполнять что-то своё). В теории может соответствовать вызовам методов, инициализации классов и инстанцирвоанию объектов, но в Spring AOP - это всегда вызов метода.
+* Advice - код, который "впрыскивается" и выполняется в joinpoint
+* Pointcut - тем или иным способом отпределённое множества joinpoint-ов. Например, "все методы, начинающиеся со слова get". Или: "все методы, аннотированные аннотацией @Benchmarked". Связывая pointcut-ы с sdvice-фми, мы определяем, что именно и когда будет работать.
+* Aspect - комбинация advices+pointcuts, оформленная в виде отдельного класса. Определяет добавляемую в приложение логику, ответственную за какую-то определённую задача (например, трассировку)
+* Weaving - процесс "вплетения" кода advices в нужные места кода приложения.
+* Target - метод, чьё поведение изменяется с помощью AOP.
+
+
+Как можно реализовать AOP?
+* Статически: вплетение на уровне исходников или байт-кода.
+* Динамически: создавая прокси и используя вплетение в runtime.
+* Spring использует динамический AOP.
+
+
+Использование AOP в Spring
+Для активации BeanPostProcessor-а, сканирующего AOP-аннотации, надо в конфигурации включить аннотацию @EnableAspectJAutoProxe
+//
+@Configuretion
+@EnableAspectJAutoProxe
+public class AppConfig {
+    ...
+}
+
+Пример аспекта {
+    @Component @Aspect
+    public class BenchmarkAspect {
+        @Around("@Annotation(Benchmark)")
+            //pointcut expression ^^^
+        public Object execEntryPoint(ProceedingJoinPoint joinPoint) 
+                                            throws Throwable {
+            System.out.println("[[[BENCHMARK method %s%n", 
+                                joinPoint.getSignature().getName());
+            long start = System.nanoTime();
+            Object retVal = jounPoint.proceed();
+            long end = System.nanoTime();
+            System.out.println("Time: %dns]]]%n", end - start);
+            return retVal;
+        }
+    }
+}
+
+
+Spring AOP checklist
+* @EnableAspectJAutoProxy над конфигурацией
+* @Aspect над аспеком
+* @Compontnt / @Bean для аспекта, и сам аспект должен входить в конфигурацию приложения
+* Аспект не перехватывает методы, которые вызываются @PostConstruct-ом
+
+Какие бывают advices
+* @Befire
+* @AfterReturning
+* @AfterThrowing
+* @After
+* @Around
+
